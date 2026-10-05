@@ -25,6 +25,7 @@ Given a query that matches at least one listing, the agent completes all three
 tool calls and returns a fit card — in at least 4 of 5 tries.
 
 **Why this target:**
+My search uses simple keyword matching, so different wording may not always find the expected listing. A 4 out of 5 target allows for one search phrasing to miss while still requiring the agent to work reliably.
 <!-- Why 4 of 5 and not 5 of 5? Something about your search, probably —
      "my search is a plain keyword match and some phrasings will miss" is a
      real answer. -->
@@ -37,13 +38,15 @@ Given a query that matches no listings, the agent stops before calling
 `suggest_outfit` and returns a message naming what to change — 5 of 5 tries.
 
 **Why this target:**
+The empty-search branch is a deterministic check for an empty list and does not depend on model output, so it should stop correctly every time.
 <!-- Why is 5 of 5 reasonable here when criterion 1 isn't? What's different
      about this path? -->
 
 ---
 
-## 3. Something about state
+## 3. Selected item stays consistent through session state
 
+Given a successful search, the selected item's `id` stored in `session["selected_item"]` should match the item received by `suggest_outfit` in 5 out of 5 tries.
 <!-- YOU WRITE THIS ONE.
 
      How would you know that the item your search found is the same item the
@@ -57,13 +60,14 @@ Given a query that matches no listings, the agent stops before calling
 
 
 **Why this target:**
-
+The session should pass the exact selected listing from one tool to the next. Since this state transfer is deterministic and does not depend on model output, the IDs should match every time.
 
 
 ---
 
-## 4. Something about the fit card
+## 4. Fit card includes price and platform
 
+For 5 successful searches, the fit card should mention both the selected item's price and platform in at least 4 out of 5 tries.
 <!-- YOU WRITE THIS ONE.
 
      The fit card calls a model, so the same input can produce different words
@@ -78,13 +82,14 @@ Given a query that matches no listings, the agent stops before calling
 
 
 **Why this target:**
-
+The fit card is model-generated, so its wording can vary and it may occasionally omit a detail. A 4 out of 5 target still requires it to include the important listing information reliably.
 
 
 ---
 
-## 5. Your choice
+## 5. Search respects the maximum price
 
+For searches with a max price, every returned listing should cost at or below that price in 5 out of 5 tries.
 <!-- YOU WRITE THIS ONE TOO.
 
      Pick something you actually care about getting right. Speed, the empty
@@ -95,7 +100,7 @@ Given a query that matches no listings, the agent stops before calling
 
 
 **Why this target:**
-
+The price filter is handled by deterministic code before any model call, so every returned listing should respect the price ceiling.
 
 
 ---
