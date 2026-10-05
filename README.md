@@ -57,26 +57,26 @@
      on, and if you don't decide it here you'll discover it as a crash in
      Milestone 5. -->
 
-### `search_listings`
+### `search_listings(description, size, max_price)`
 
-- **What it does:**
-- **Inputs:** <!-- name and type each: `max_price` (float), not "a price" -->
-- **Returns:**
-- **When it has nothing:**
+- **What it does:** Searches the thrift listings for items matching the user's description, optional size, and optional maximum price.
+- **Inputs:** `description` (str), `size` (str or None), `max_price` (float or None).
+- **Returns:** A list of matching listing dictionaries, best match first, with at most `SEARCH_RESULT_LIMIT` results.
+- **When nothing matches:** Returns an empty list `[]`.
 
-### `suggest_outfit`
+### `suggest_outfit(new_item, wardrobe)`
 
-- **What it does:**
-- **Inputs:**
-- **Returns:**
-- **When it has nothing:**
+- **What it does:** Suggests one or two outfits using the selected thrift item and the user's wardrobe.
+- **Inputs:** `new_item` (dict), `wardrobe` (dict containing an `items` list).
+- **Returns:** A non-empty string containing outfit suggestions.
+- **When the wardrobe is empty:** Returns general styling advice for the selected item instead of failing.
 
-### `create_fit_card`
+### `create_fit_card(outfit, new_item)`
 
-- **What it does:**
-- **Inputs:**
-- **Returns:**
-- **When it has nothing:**
+- **What it does:** Creates a short social-style caption for the selected thrift item and outfit.
+- **Inputs:** `outfit` (str), `new_item` (dict).
+- **Returns:** A two-to-four sentence caption mentioning the item, its price, its platform, and the outfit vibe.
+- **When the outfit is empty:** Returns a descriptive message instead of raising an error.
 
 ---
 
@@ -94,6 +94,7 @@
      function have to be real. -->
 
 **Branch rule:**
+If `search_listings()` returns an empty list, put a message in the session telling the user what they can change and stop. Otherwise, take the first result, save it in the session, and continue to `suggest_outfit()`.
 
 **Where it lives:** `agent.py::run_agent`
 
