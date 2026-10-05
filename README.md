@@ -13,7 +13,7 @@
 > python app.py ask 'vintage graphic tee under $30'
 > ```
 >
-> All three tools are stubs, so that last command will do nothing useful yet.
+> The three tools start as stubs and are implemented during Unit 3.
 > That's the starting position.
 >
 > **The rest of this file is your submission.** Fill it in as you go.
@@ -39,23 +39,11 @@
 
 ## What This Does
 
-<!-- Three or four sentences: what a user asks for, and what they get back. -->
-
-
+FitFindr helps a user find thrift listings that match a description, size, and budget. If a match is found, it selects the best result, suggests outfits using pieces from the user's wardrobe, and creates a short fit-card caption. If no listing matches, the agent stops early and tells the user what they could change about their search.
 
 ---
 
 ## Tool Inventory
-
-<!-- Four lines per tool. This is worth 2 points and it's the single most
-     common place students lose them.
-
-     "Returns a list" earns NOTHING. The description has to say what is IN
-     the list.
-
-     The empty case isn't optional either — it's the thing your loop branches
-     on, and if you don't decide it here you'll discover it as a crash in
-     Milestone 5. -->
 
 ### `search_listings(description, size, max_price)`
 
@@ -82,81 +70,88 @@
 
 ## Planning Loop
 
-<!-- Your branch rule, stated as a rule — the condition AND both paths — plus
-     the file and function that holds it.
-
-     Like this:
-       "If search_listings returns an empty list, put a message in the session
-        and stop. Otherwise take the first result and go to suggest_outfit."
-        — agent.py::run_agent
-
-     The grader checks your code against what you claim here, so the file and
-     function have to be real. -->
-
-**Branch rule:**
-If `search_listings()` returns an empty list, put a message in the session telling the user what they can change and stop. Otherwise, take the first result, save it in the session, and continue to `suggest_outfit()`.
+**Branch rule:** If `search_listings()` returns an empty list, put a message in the session telling the user what they can change and stop. Otherwise, take the first result, save it in the session, and continue to `suggest_outfit()`.
 
 **Where it lives:** `agent.py::run_agent`
 
-**How the query is parsed:** <!-- regex, string splitting, or asking the model — say which -->
+**How the query is parsed:** The query is parsed with regular expressions. The parser extracts an `under $X` price limit and a `size X` value, then removes those parts from the remaining text to use as the description.
 
-**What moves through the session:** <!-- which fields, in what order -->
+**What moves through the session:** The parsed query is stored in `session["parsed"]`, search results go into `session["search_results"]`, the chosen listing goes into `session["selected_item"]`, the outfit goes into `session["outfit_suggestion"]`, and the final caption goes into `session["fit_card"]`.
 
 ---
 
 ## Sample Run
 
-<!-- Two things go here.
-
-     1. One FULL query and its output, pasted as text.
-     2. Your three per-tool terminal tests — the command and what it printed. -->
-
 **One full query**
 
-```
-$ python app.py ask '...'
+```text
+$ python app.py ask 'vintage graphic tee under $30'
 
+Found: Y2K Baby Tee — Butterfly Print — $18.0 on depop
+
+Outfit: Here are two practical outfit suggestions using the Y2K Butterfly Baby Tee and pieces from your wardrobe:
+
+Outfit 1: Y2K Streetwear Contrast
+- Wardrobe pieces: Baggy straight-leg jeans (dark wash), vintage black denim jacket, chunky white sneakers, black crossbody bag.
+- Why it works: The tight, cropped fit of the baby tee balances out the voluminous dark-wash baggy jeans. Layering the slightly cropped black denim jacket on top leans fully into the vintage Y2K aesthetic, while the chunky white sneakers tie the look together.
+
+Outfit 2: Casual Crossover (Y2K Meets Earth Tones)
+- Wardrobe pieces: Wide-leg khaki trousers, brown leather belt, black combat boots, black crossbody bag.
+- Why it works: Pairing the playful, pink-and-purple butterfly print with minimal khaki trousers creates a fun contrast. Use the brown leather belt to define your waist with the high-rise trousers, and ground the pastel top with edgy black combat boots.
+
+Fit card: Just scored the ultimate Y2K butterfly baby tee for only $18 on Depop and I am obsessed! I love styling it with baggy denim for that effortless streetwear contrast, or dressing it down with khaki trousers and combat boots for an edgy everyday vibe. Run, don't walk, because this piece is total vintage perfection!
+
+0 model calls this session, 2 served from cache
 ```
 
 **The three tools, tested one at a time**
 
-```
+```text
 $ python -c "from tools import search_listings; print(search_listings('graphic tee', max_price=30))"
 
+[{'id': 'lst_002', 'title': 'Y2K Baby Tee — Butterfly Print', 'description': 'Super cute early 2000s baby tee with butterfly graphic. Fitted crop length. Tag says medium but fits like a small.', 'category': 'tops', 'style_tags': ['y2k', 'vintage', 'graphic tee', 'cottagecore'], 'size': 'S/M', 'condition': 'excellent', 'price': 18.0, 'colors': ['white', 'pink', 'purple'], 'brand': None, 'platform': 'depop'}, {'id': 'lst_006', 'title': 'Graphic Tee — 2003 Tour Bootleg Style', 'description': 'Vintage-style bootleg tee with faded graphic. Slightly boxy fit. 100% cotton, soft and worn-in.', 'category': 'tops', 'style_tags': ['graphic tee', 'vintage', 'grunge', 'streetwear', 'band tee'], 'size': 'L', 'condition': 'good', 'price': 24.0, 'colors': ['black'], 'brand': None, 'platform': 'depop'}, {'id': 'lst_017', 'title': 'Mesh Long-Sleeve Top — Black', 'description': 'Sheer black mesh long-sleeve. Great for layering under a graphic tee or over a bralette. Stretchy material, fits true to size.', 'category': 'tops', 'style_tags': ['y2k', 'grunge', 'goth', 'layering'], 'size': 'S/M', 'condition': 'excellent', 'price': 15.0, 'colors': ['black'], 'brand': None, 'platform': 'depop'}, {'id': 'lst_033', 'title': 'Vintage Band Tee — Faded Grey', 'description': 'Faded grey band-style tee with distressed graphic. Crew neck. Fits boxy. Well-loved but no holes or major damage.', 'category': 'tops', 'style_tags': ['vintage', 'grunge', 'band tee', 'graphic tee', 'streetwear'], 'size': 'L', 'condition': 'fair', 'price': 19.0, 'colors': ['grey', 'charcoal'], 'brand': None, 'platform': 'depop'}, {'id': 'lst_011', 'title': 'Low-Rise Cargo Pants — Khaki', 'description': 'Y2K era low-rise cargo pants. Lots of pockets. Khaki color, slightly distressed at the hems. Great for layering with a long tee.', 'category': 'bottoms', 'style_tags': ['y2k', 'cargo', '2000s', 'streetwear'], 'size': 'W29', 'condition': 'fair', 'price': 27.0, 'colors': ['khaki', 'tan'], 'brand': None, 'platform': 'poshmark'}, {'id': 'lst_015', 'title': 'Vintage Graphic Hoodie — Faded Black', 'description': 'Faded black pullover hoodie with barely-visible vintage graphic on the chest. Cozy interior. Some pilling but adds to the worn-in look.', 'category': 'tops', 'style_tags': ['vintage', 'grunge', 'graphic', 'streetwear'], 'size': 'L', 'condition': 'fair', 'price': 26.0, 'colors': ['black', 'charcoal'], 'brand': None, 'platform': 'depop'}]
 ```
 
-```
-$ python -c "from tools import suggest_outfit; ..."
+```text
+$ python -c "from tools import suggest_outfit; from utils.data_loader import get_example_wardrobe, load_listings; print(suggest_outfit(load_listings()[0], get_example_wardrobe()))"
 
+Here are two ways to style the vintage Levi's 501s using pieces already in your wardrobe:
+
+Outfit 1: Effortless Casual Streetwear
+- Top: White ribbed tank top
+- Outerwear: Vintage black denim jacket
+- Shoes: Chunky white sneakers
+- Accessories: Black crossbody bag
+- Why it works: The medium-wash 501s provide a great contrast against the black denim jacket, while the fitted white tank balances out the structured denim. Finish with chunky sneakers for an easy, everyday look.
+
+Outfit 2: Cozy & Balanced Proportions
+- Top: Oversized grey crewneck sweatshirt
+- Accessories: Brown leather belt, Black crossbody bag
+- Shoes: Black combat boots
+- Why it works: 501s have a classic, straight-leg fit that pairs perfectly with an oversized top. Tucking the front of the grey crewneck into the jeans creates definition, and the combat boots add a grounded, grunge edge.
 ```
 
-```
-$ python -c "from tools import create_fit_card; ..."
+```text
+$ python -c "from tools import create_fit_card; from utils.data_loader import load_listings; print(create_fit_card('jeans and white sneakers', load_listings()[0]))"
 
+Scored the ultimate vintage Levi’s 501s and I’m honestly obsessed with this medium wash. Just dropped them on my Depop for $38 and they're ready for your new favorite everyday fit. Throw these on with some crisp white sneakers for that effortlessly cool streetwear vibe. Grab them before I change my mind and keep them!
 ```
 
 ---
 
 ## How I Used AI
 
-<!-- Two specific moments. What you asked, what came back, what you changed.
-
-     "I used Claude to help me code" is not enough.
-
-     "I gave Claude my search_listings spec. It returned None on no match
-     instead of an empty list, so I changed it" is the level we want. -->
-
 **Moment 1**
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- **What I asked for:** I asked ChatGPT to help me complete `search_listings()` using the starter TODOs and the listing fields.
+- **What came back:** It suggested keyword scoring, size filtering, price filtering, and helper functions for tokenizing sizes.
+- **What I changed:** I changed the stopword list after class discussion so words like `under` and `over` were not treated as meaningless search terms, and I fixed the size helper so `.upper()` was called correctly.
 
 **Moment 2**
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- **What I asked for:** I asked ChatGPT to help wire the three tools into the planning loop in `agent.py`.
+- **What came back:** It suggested a regex-based query parser, session-based state flow, an empty-search branch, and a loop guarded by `trace.check_iterations()`.
+- **What I changed:** I fixed an indentation error while integrating the code and verified that the selected item is read back from session state before calling `suggest_outfit()`.
 
 <!-- ═══════════════════════ UNIT 4 — THE TEST ═══════════════════════
 
