@@ -138,7 +138,7 @@ def search_listings(
         scored.append((score, listing))
 
     # Best keyword matches first
-    scored.sort(key=lambda item: item[0], reverse=True)
+    scored.sort(key=lambda item: (-item[0], item[1]["price"]))
 
     return [
         listing
