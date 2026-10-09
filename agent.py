@@ -211,10 +211,23 @@ def run_agent(query: str, wardrobe: dict) -> dict:
             step = "outfit"
 
         elif step == "outfit":
-            session["outfit_suggestion"] = suggest_outfit(
-                session["selected_item"],
-                session["wardrobe"],
-            )
+            try:
+                session["outfit_suggestion"] = suggest_outfit(
+                    session["selected_item"],
+                    session["wardrobe"],
+                )
+            except ModelUnavailable:
+                session["error"] = (
+                    "The outfit model is unavailable. Check your API key or internet "
+                    "connection and try again."
+                )
+
+                trace.step(
+                    "model_unavailable",
+                    note="suggest_outfit could not reach the model",
+                )
+
+                return session
 
             trace.step(
                 "suggest_outfit",
@@ -225,10 +238,23 @@ def run_agent(query: str, wardrobe: dict) -> dict:
             step = "fit_card"
 
         elif step == "fit_card":
-            session["fit_card"] = create_fit_card(
-                session["outfit_suggestion"],
-                session["selected_item"],
-            )
+            try:
+                session["fit_card"] = create_fit_card(
+                    session["outfit_suggestion"],
+                    session["selected_item"],
+                )
+            except ModelUnavailable:
+                session["error"] = (
+                    "The fit-card model is unavailable. Check your API key or internet "
+                    "connection and try again."
+                )
+
+                trace.step(
+                    "model_unavailable",
+                    note="create_fit_card could not reach the model",
+                )
+
+                return session
 
             trace.step(
                 "create_fit_card",
