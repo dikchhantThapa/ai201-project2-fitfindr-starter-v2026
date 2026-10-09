@@ -49,7 +49,7 @@ FitFindr helps a user find thrift listings that match a description, size, and b
 
 - **What it does:** Searches the thrift listings for items matching the user's description, optional size, and optional maximum price.
 - **Inputs:** `description` (str), `size` (str or None), `max_price` (float or None).
-- **Returns:** A list of matching listing dictionaries, best match first, with at most `SEARCH_RESULT_LIMIT` results.
+- **Returns:** A list of matching listing dictionaries, best keyword match first, with cheaper listings first when keyword scores are tied, and at most `SEARCH_RESULT_LIMIT` results.
 - **When nothing matches:** Returns an empty list `[]`.
 
 ### `suggest_outfit(new_item, wardrobe)`
@@ -153,6 +153,12 @@ Scored the ultimate vintage Levi’s 501s and I’m honestly obsessed with this 
 - **What came back:** It suggested a regex-based query parser, session-based state flow, an empty-search branch, and a loop guarded by `trace.check_iterations()`.
 - **What I changed:** I fixed an indentation error while integrating the code and verified that the selected item is read back from session state before calling `suggest_outfit()`.
 
+**Moment 3**
+
+- **What I asked for:** I asked ChatGPT to help me understand the MCP rewire, add trace calls and graceful model-failure handling, and interpret the before/after evaluation results.
+- **What came back:** It suggested where to replace the direct search call with `call_tool()`, where to add `trace.step()` calls, how to catch `ModelUnavailable`, and how to organize the evaluation scenarios.
+- **What I changed:** I adapted the suggestions to my existing state-machine loop instead of replacing my loop with the instructor's structure. I also chose a simple price tie-breaker as the measured improvement after the baseline met all five criteria.
+
 <!-- ═══════════════════════ UNIT 4 — THE TEST ═══════════════════════
 
      Don't fill these in during unit 3.
@@ -173,16 +179,32 @@ Scored the ultimate vintage Levi’s 501s and I’m honestly obsessed with this 
 
 | Criterion | Target | Try 1 | Try 2 | Try 3 | Try 4 | Try 5 | Verdict |
 |---|---|---|---|---|---|---|---|
-| 1.  |  |  |  |  |  |  |  |
-| 2.  |  |  |  |  |  |  |  |
-| 3.  |  |  |  |  |  |  |  |
-| 4.  |  |  |  |  |  |  |  |
-| 5.  |  |  |  |  |  |  |  |
+| 1. Matching query completes the full flow | 4/5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 2. Impossible query stops before `suggest_outfit` | 5/5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 3. Selected item stays consistent through session state | 5/5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 4. Fit card includes price and platform | 4/5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 5. Search respects the maximum price | 5/5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
 
-**Real output from one try**, pasted as text, naming the file and function
-that produced it:
+**Real output from one try**, from `results/run_2026-10-09_1249_before.md`, produced by `agent.py::run_agent`:
 
-```
+```text
+impossible query stops early  (example wardrobe)
+query: designer ballgown size XXS under $5
+
+[1] parse_query
+    in:  designer ballgown size XXS under $5
+    out: {'description': 'designer ballgown', 'size': 'XXS', 'max_price': 5.0}
+
+[2] search_listings (via MCP)
+    in:  {'description': 'designer ballgown', 'size': 'XXS', 'max_price': 5.0}
+    out: [] (empty)
+    →    0 match(es)
+
+[3] branch
+    →    search returned []; stopping here before suggest_outfit
+
+try 1: stopped early — No matching listings were found. Try a broader description,
+a different size, or a higher maximum price.
 
 ```
 
@@ -208,13 +230,17 @@ that produced it:
 
 | # | Criterion | Target | Verdict | How I decided |
 |---|---|---|---|---|
-| 1 |  |  |  |  |
-| 2 |  |  |  |  |
-| 3 |  |  |  |  |
-| 4 |  |  |  |  |
-| 5 |  |  |  |  |
+| 1 | Matching query completes the full flow | 4/5 | MET | All 5 runs completed search, outfit suggestion, and fit-card generation. |
+| 2 | Impossible query stops before `suggest_outfit` | 5/5 | MET | All 5 runs returned an empty search result and stopped before outfit generation. |
+| 3 | Selected item stays consistent through session state | 5/5 | MET | The selected listing stayed consistent through session state in all 5 runs. |
+| 4 | Fit card includes price and platform | 4/5 | MET | All 5 fit cards included the selected item's price and platform. |
+| 5 | Search respects the maximum price | 5/5 | MET | Every returned listing stayed at or below the requested maximum price. |
 
 **Diagnoses**
+
+None of the five acceptance criteria missed their target in the baseline evaluation.
+
+Because there was no failed criterion to repair, I looked for a smaller search-quality issue. Listings with the same keyword score kept their original catalog ordering, so price was not considered when relevance was tied. I chose that ranking behavior as the improvement to measure.
 
 
 
@@ -233,21 +259,54 @@ that produced it:
      anyone will ever find that out. -->
 
 **Happy path**
+```text
+$ python app.py ask 'vintage graphic tee under $30' --trace
 
+[1] parse_query
+    in:  vintage graphic tee under $30
+    out: {'description': 'vintage graphic tee', 'size': None, 'max_price': 30.0}
+
+[2] search_listings (via MCP)
+    in:  {'description': 'vintage graphic tee', 'size': None, 'max_price': 30.0}
+    out: 10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
+    →    10 match(es)
+
+[3] select_item
+    out: Y2K Baby Tee — Butterfly Print ($18.0, depop)
+
+[4] suggest_outfit
+    in:  Y2K Baby Tee — Butterfly Print ($18.0, depop)
+    out: Here are two practical outfit suggestions using the Y2K Butterfly Baby Tee and pieces from your wardrobe...
+
+[5] create_fit_card
+    in:  Y2K Baby Tee — Butterfly Print ($18.0, depop)
+    out: Just scored the ultimate Y2K butterfly baby tee for only $18 on Depop...
 ```
 
-```
 
 **Empty search**
+```text
+$ python app.py ask 'designer ballgown size XXS under $5' --trace
 
+[1] parse_query
+    in:  designer ballgown size XXS under $5
+    out: {'description': 'designer ballgown', 'size': 'XXS', 'max_price': 5.0}
+
+[2] search_listings (via MCP)
+    in:  {'description': 'designer ballgown', 'size': 'XXS', 'max_price': 5.0}
+    out: [] (empty)
+    →    0 match(es)
+
+[3] branch
+    →    search returned []; stopping here before suggest_outfit
+
+No matching listings were found. Try a broader description, a different size, or a higher maximum price.
 ```
 
-```
 
-**On the MCP move:** <!-- what changed in your code, and whether anything
-behaved differently afterwards. If the rewire didn't work, say exactly where it
-broke — the error text and the last thing that worked. That earns the point in
-full. -->
+**On the MCP move:** I moved `search_listings` behind MCP. The agent now calls the tool using `mcp_client.call_tool()` instead of importing and calling `search_listings()` directly. `mcp_client.py` successfully discovered the registered tool, and the same query returned the same listing data after the rewire. The MCP move changed how the tool is reached, but not the shape of its inputs or results.
+
+**Failure-mode checks:** I tested all three required failure modes. An impossible search stopped before `suggest_outfit` with an actionable message. An empty wardrobe still completed successfully using general styling advice. For the model-unavailable test, I temporarily changed one character of the API key; the agent caught `ModelUnavailable` and returned an actionable error instead of crashing with a traceback.
 
 
 
@@ -261,21 +320,33 @@ full. -->
      `python run_eval.py --label after` -->
 
 **What I changed:**
+I changed the search ranking so that keyword relevance is still the first priority, but cheaper listings are ranked first when two listings have the same keyword score.
+
+Before:
+
+`scored.sort(key=lambda item: item[0], reverse=True)`
+
+After:
+
+`scored.sort(key=lambda item: (-item[0], item[1]["price"]))`
 
 **Which failure it was meant to fix:**
+None of the five acceptance criteria failed. This improvement addressed a search-quality weakness I noticed during diagnosis: equally relevant results were ordered only by their original catalog position instead of using price as a useful tie-breaker.
 
 ### Run Log — After
 
 | Criterion | Target | Try 1 | Try 2 | Try 3 | Try 4 | Try 5 | Verdict |
 |---|---|---|---|---|---|---|---|
-| 1.  |  |  |  |  |  |  |  |
-| 2.  |  |  |  |  |  |  |  |
-| 3.  |  |  |  |  |  |  |  |
-| 4.  |  |  |  |  |  |  |  |
-| 5.  |  |  |  |  |  |  |  |
+| 1. Matching query completes the full flow | 4/5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 2. Impossible query stops before `suggest_outfit` | 5/5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 3. Selected item stays consistent through session state | 5/5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 4. Fit card includes price and platform | 4/5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 5. Search respects the maximum price | 5/5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
 
 **Did it help, and how do I know:**
+Yes. All five acceptance criteria still met their targets after the change, so the improvement did not regress the existing behavior.
 
+It also changed the ranking in a measurable way. Before the improvement, `graphic tee under $20` returned the $18 Y2K Baby Tee first. After the improvement, the $15 Mesh Long-Sleeve Top was ranked first because it had an equal keyword score but a lower price. This shows that the new price tie-breaker is being applied.
 <!-- If it made things worse, say that. Honestly reported, that earns full
      credit and is more interesting than one that worked. -->
 
@@ -284,7 +355,13 @@ full. -->
 ---
 
 ## What's Still Broken
+No acceptance criteria are currently missed, but there are still limitations.
 
+The search uses simple keyword overlap instead of semantic understanding. Because of this, a query can return loosely related items when they happen to share words in their title, description, category, colors, or style tags. For example, `graphic tee under $20` can return a mesh long-sleeve top because its description mentions layering under a graphic tee.
+
+The query parser is also intentionally simple. It recognizes patterns such as `under $30` and `size M`, but more complicated natural-language expressions for budgets or sizes may not be parsed correctly.
+
+If I continued the project, I would improve semantic relevance and make the query parser handle more natural variations while keeping the deterministic price and size filters.
 <!-- For each criterion still missed: what you'd do, and why you stopped where
      you did. "I ran out of time" is fine if it's true. Pretending nothing is
      left is not. -->

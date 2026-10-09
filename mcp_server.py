@@ -86,8 +86,9 @@ def search_listings(
     "M/L" but not "XL"; listings sized "One Size" match any request.
     'max_price' is optional, in  dollars, and inclusive. 
 
-    Returns a list of listing dicts, best keyword match first, with at most
-    the configured search result limit.
+    Returns a list of listing dicts, best keyword match first, with cheaper 
+    listings first among equal keyword scores, and at most the configured
+    search result limit.
     Each dictionary has: id, title, description, category, style_tags, size,
     condition, price, colors, brand (often null), platform.
 
