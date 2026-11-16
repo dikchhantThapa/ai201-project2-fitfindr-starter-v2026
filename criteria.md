@@ -136,3 +136,26 @@ The price filter is handled by deterministic code before any model call, so ever
      A number you missed stays where it is, gets diagnosed, and gets a fix
      attempted. That's where the points are.
      ───────────────────────────────────────────────────────────────────────── -->
+
+
+## Unit 9 Capstone Acceptance Criteria
+
+1. **Hosted service availability**  
+   **Target:** The deployed FitFindr `/health` endpoint returns `{"status":"ok"}` successfully in 3 out of 3 trials.  
+   **Reason:** The capstone deployment should be reachable and running without requiring the project to be started locally.
+
+2. **Existing FitFindr functionality still works after deployment**  
+   **Target:** In 3 out of 3 hosted `/ask` trials, the response has no error and contains a `selected_item`, `outfit_suggestion`, and `fit_card`.  
+   **Reason:** Deploying and instrumenting FitFindr should not break the recommendation functionality that already existed.
+
+3. **Structured logging captures each completed request**  
+   **Target:** In 3 out of 3 tested requests, the structured runtime log contains a timestamp, the input query, an output or error, and the request duration in seconds.  
+   **Reason:** The deployed system should provide enough information to understand what request ran, what happened, and how long it took.
+
+4. **Invalid input is rejected cleanly**  
+   **Target:** In 3 out of 3 requests with no query field, FitFindr returns HTTP 400 with a clear missing-query error instead of crashing, and the request is recorded in the structured log as `rejected`.  
+   **Reason:** A deployed service should handle predictable bad input without producing an unhandled server failure.
+
+5. **Warm hosted requests complete within an acceptable time**  
+   **Target:** After the Render service is already awake, 3 out of 3 normal FitFindr requests complete in 30 seconds or less, using the `seconds` value recorded in the structured log.  
+   **Reason:** The deployed agent should respond within a practical amount of time, while excluding Render's free-tier cold-start delay from the measurement.
