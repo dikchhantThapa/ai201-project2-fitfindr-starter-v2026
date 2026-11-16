@@ -121,37 +121,141 @@ Useful flags on `ask`:
 
 ## Running it somewhere else — **unit 9**
 
-Everything above exits when the command finishes. A host has nothing to keep
-running, so before you can deploy this you need something that stays up.
-`serve.py` is that: the same `run_agent()`, behind two HTTP routes.
+FitFindr is deployed on Render:
 
-On your machine:
+**https://dikchhant-fitfindr.onrender.com**
+
+The hosted version is the easiest way to test the project. No local setup or API key is required.
+
+### Check that the service is running
+
+**Bash / Git Bash**
+
+```bash
+curl -sS https://dikchhant-fitfindr.onrender.com/health
+```
+
+**Windows PowerShell**
+
+```powershell
+curl.exe -sS https://dikchhant-fitfindr.onrender.com/health
+```
+
+Expected response:
+
+```json
+{"status":"ok"}
+```
+
+The free Render service may take longer on the first request after it has been idle.
+
+### Send a FitFindr request
+
+**Bash / Git Bash**
+
+```bash
+curl -sS -X POST https://dikchhant-fitfindr.onrender.com/ask \
+  -H "Content-Type: application/json" \
+  -d '{"query":"vintage graphic tee under $30"}'
+```
+
+**Windows PowerShell**
+
+```powershell
+curl.exe -sS -X POST https://dikchhant-fitfindr.onrender.com/ask `
+  -H "Content-Type: application/json" `
+  -d '{"query":"vintage graphic tee under $30"}'
+```
+
+The response contains the full FitFindr session, so it is long. For a successful run, check that:
+
+- `"error"` is `null`
+- `"selected_item"` contains an item
+- `"outfit_suggestion"` contains an outfit
+- `"fit_card"` contains a generated caption
+
+You can replace the example query with another clothing request.
+
+
+#### Optional quick check
+
+Instead of reading the full JSON response, this command gives a simple yes/no check for the main FitFindr outputs.
+
+**Bash / Git Bash**
+
+```bash
+curl -sS -X POST https://dikchhant-fitfindr.onrender.com/ask \
+  -H "Content-Type: application/json" \
+  -d '{"query":"vintage graphic tee under $30"}' \
+  | python -c "import sys,json; d=json.load(sys.stdin); print('error:', 'yes' if d.get('error') else 'no'); print('selected_item:', 'yes' if d.get('selected_item') else 'no'); print('outfit_suggestion:', 'yes' if d.get('outfit_suggestion') else 'no'); print('fit_card:', 'yes' if d.get('fit_card') else 'no')"
+```
+
+**Windows PowerShell**
+
+```powershell
+curl.exe -sS -X POST https://dikchhant-fitfindr.onrender.com/ask `
+  -H "Content-Type: application/json" `
+  -d '{"query":"vintage graphic tee under $30"}' `
+  | python -c "import sys,json; d=json.load(sys.stdin); print('error:', 'yes' if d.get('error') else 'no'); print('selected_item:', 'yes' if d.get('selected_item') else 'no'); print('outfit_suggestion:', 'yes' if d.get('outfit_suggestion') else 'no'); print('fit_card:', 'yes' if d.get('fit_card') else 'no')"
+```
+
+Expected successful result:
+
+```text
+error: no
+selected_item: yes
+outfit_suggestion: yes
+fit_card: yes
+```
+
+
+### Try unexpected input
+
+**Bash / Git Bash**
+
+```bash
+curl -sS -X POST https://dikchhant-fitfindr.onrender.com/ask \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+**Windows PowerShell**
+
+```powershell
+curl.exe -sS -X POST https://dikchhant-fitfindr.onrender.com/ask `
+  -H "Content-Type: application/json" `
+  -d '{}'
+```
+
+Expected response:
+
+```json
+{"error":"Send JSON with a 'query' field, e.g. {\"query\": \"vintage graphic tee under $30\"}"}
+```
+
+The service should return this clear error instead of crashing.
+
+### Run locally
 
 ```bash
 python serve.py
-curl -X POST http://localhost:5000/ask \
-  -H 'Content-Type: application/json' \
-  -d '{"query": "vintage graphic tee under $30"}'
 ```
 
-On a host, the start command is:
+The local server runs at:
+
+```text
+http://localhost:5000
+```
+
+The hosted start command is:
 
 ```bash
 gunicorn serve:app
 ```
 
-| Thing | What it means |
-|---|---|
-| `PORT` | The host tells your app which port to listen on by setting this. Both `serve.py` and `gunicorn` read it, and `serve.py` falls back to `5000` on your machine. Don't hard-code a port |
-| `POST /ask` | `{"query": "...", "wardrobe": {...}}` — wardrobe optional. Returns the session dict, `error` and all |
-| `GET /health` | Says `ok` if the app is awake |
-| It answers one request at a time | On purpose. A second request waits for the first to finish, and prints `[serve] another request is still running` while it waits. An MCP tool call starts a whole second Python process, and the free tier's 512 MB has no room for two of those at once — and `generate.py`'s rate-limit counting assumes one caller. The reasoning is written out in `serve.py` |
-| `gunicorn serve:app`, exactly | Not `-k gevent`, not `-k eventlet`, not wrapped for uvicorn. `mcp_client.call_tool` uses `asyncio.run()`, which won't start inside a running event loop, so an async worker breaks **every** MCP call — and only once you've deployed it |
-| The first request is slow | The free tier puts your app to sleep after about fifteen minutes of nothing. The next request wakes it up and waits for it — around a minute. Not a bug, and worth knowing before you demo it |
+`POST /ask` runs the existing FitFindr agent. `GET /health` checks whether the service is awake.
 
-`serve.py` ships with **no logging and no timing in it**, on purpose. You add
-that yourself in the follow-along, before you deploy — instrumenting first is
-the point of the session.
+FitFindr handles one agent request at a time. Structured logs record the timestamp, input, output or error, and execution time. Local runs are written to `logs/runs.jsonl`, and the deployed service also emits the structured entries to the Render runtime logs.
 
 ---
 
