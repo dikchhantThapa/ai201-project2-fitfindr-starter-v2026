@@ -444,7 +444,7 @@ The hosted service exposes:
 
 **Instrumentation**
 
-Each structured request log records the request timestamp, request outcome, input query, output or error, and execution duration in seconds.
+After the improvement, each structured request log records the request timestamp, request outcome, input query, output or error, and execution duration in seconds.
 
 Successful requests now use `status="ok"`. Invalid requests use `status="rejected"`, and unexpected failures use `status="crashed"`.
 
@@ -453,6 +453,7 @@ Locally, records are written to `logs/runs.jsonl`. The same structured JSON is a
 Example log entries from the evaluation:
 
 ```json
+{"timestamp": "2026-11-15T21:56:47-08:00", "query": "vintage graphic tee under $30", "output": "Found this adorable Y2K butterfly baby tee while thrifting and I am so obsessed with the vibe! It's giving major 90s model-off-duty energy and is the ultimate piece for mixing nostalgic streetwear with earth tones. Snag this cute little top on my Depop right now for just $18! 🦋✨", "seconds": 4.97}
 {"timestamp": "2026-11-15T21:56:27-08:00", "query": "vintage graphic tee under $30", "output": "Found this adorable Y2K butterfly baby tee while thrifting and I am so obsessed with the vibe! It's giving major 90s model-off-duty energy and is the ultimate piece for mixing nostalgic streetwear with earth tones. Snag this cute little top on my Depop right now for just $18! 🦋✨", "seconds": 4.72}
 {"timestamp": "2026-11-15T21:56:32-08:00", "query": "vintage graphic tee under $30", "output": "Found this adorable Y2K butterfly baby tee while thrifting and I am so obsessed with the vibe! It's giving major 90s model-off-duty energy and is the ultimate piece for mixing nostalgic streetwear with earth tones. Snag this cute little top on my Depop right now for just $18! 🦋✨", "seconds": 4.61}
 {"timestamp": "2026-11-15T21:56:37-08:00", "query": "vintage graphic tee under $30", "output": "Found this adorable Y2K butterfly baby tee while thrifting and I am so obsessed with the vibe! It's giving major 90s model-off-duty energy and is the ultimate piece for mixing nostalgic streetwear with earth tones. Snag this cute little top on my Depop right now for just $18! 🦋✨", "seconds": 4.98}
