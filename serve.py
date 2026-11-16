@@ -169,7 +169,12 @@ def ask():
     if failure is not None:
         log_run(status="crashed", query=query, error=failure, seconds=seconds)
         return jsonify({"error": failure}), 500
-    log_run(query=query, output=session["fit_card"] or session["error"], seconds=seconds)
+    log_run(
+        status="ok",
+        query=query,
+        output=session["fit_card"] or session["error"],
+        seconds=seconds,
+    )
 
     return jsonify(session)
 
