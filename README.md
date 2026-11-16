@@ -405,3 +405,187 @@ If I continued the project, I would improve semantic relevance and make the quer
 ---
 
 📖 **How to run this project: [RUNNING.md](RUNNING.md)**
+
+
+## Capstone
+
+**What This Extends**
+
+This capstone extends FitFindr, the recommendation agent from Project 2. FitFindr already searched clothing listings, selected a matching item, suggested outfits using a sample wardrobe, and generated a fit card.
+
+For Unit 9, I kept that recommendation flow the same and added an operational layer around it: structured logging, request timing, failure logging, and hosted deployment.
+
+**The Shape**
+
+I chose **Shape A — Deploy and Instrument**.
+
+The capstone focuses on making FitFindr runnable outside my local editor and making its behavior observable through structured logs and timing data.
+
+Out of scope for this capstone were adding new recommendation features, changing the search or outfit-selection logic, adding a user interface, or adding new listing data sources.
+
+**Running It**
+
+I used **Path A — Hosted**.
+
+Hosted URL:
+
+`https://dikchhant-fitfindr.onrender.com`
+
+The deployment runs the Flask application with:
+
+`gunicorn serve:app`
+
+The complete hosted and local instructions are documented in `RUNNING.md`.
+
+The hosted service exposes:
+
+- `GET /health`
+- `POST /ask`
+
+**Instrumentation**
+
+Each structured request log records the request timestamp, request outcome, input query, output or error, and execution duration in seconds.
+
+Successful requests now use `status="ok"`. Invalid requests use `status="rejected"`, and unexpected failures use `status="crashed"`.
+
+Locally, records are written to `logs/runs.jsonl`. The same structured JSON is also printed to stdout so it can be inspected through Render's runtime logs.
+
+Example log entries from the evaluation:
+
+```json
+{"timestamp": "2026-11-15T21:56:27-08:00", "query": "vintage graphic tee under $30", "output": "Found this adorable Y2K butterfly baby tee while thrifting and I am so obsessed with the vibe! It's giving major 90s model-off-duty energy and is the ultimate piece for mixing nostalgic streetwear with earth tones. Snag this cute little top on my Depop right now for just $18! 🦋✨", "seconds": 4.72}
+{"timestamp": "2026-11-15T21:56:32-08:00", "query": "vintage graphic tee under $30", "output": "Found this adorable Y2K butterfly baby tee while thrifting and I am so obsessed with the vibe! It's giving major 90s model-off-duty energy and is the ultimate piece for mixing nostalgic streetwear with earth tones. Snag this cute little top on my Depop right now for just $18! 🦋✨", "seconds": 4.61}
+{"timestamp": "2026-11-15T21:56:37-08:00", "query": "vintage graphic tee under $30", "output": "Found this adorable Y2K butterfly baby tee while thrifting and I am so obsessed with the vibe! It's giving major 90s model-off-duty energy and is the ultimate piece for mixing nostalgic streetwear with earth tones. Snag this cute little top on my Depop right now for just $18! 🦋✨", "seconds": 4.98}
+{"timestamp": "2026-11-15T21:56:42-08:00", "query": "vintage graphic tee under $30", "output": "Found this adorable Y2K butterfly baby tee while thrifting and I am so obsessed with the vibe! It's giving major 90s model-off-duty energy and is the ultimate piece for mixing nostalgic streetwear with earth tones. Snag this cute little top on my Depop right now for just $18! 🦋✨", "seconds": 4.83}
+{"timestamp": "2026-11-15T22:23:03-08:00", "status": "ok", "query": "vintage graphic tee under $30", "output": "Manifesting main character energy in this Y2K butterfly baby tee, and I’m literally obsessed. 🦋 Grabbed this thrifted gem for just $18 and it gives the ultimate mix of vintage streetwear and soft cottagecore vibes. Throw it on with baggy denim or khaki trousers for the easiest fit ever. Now live on my Depop—go run! ✨", "seconds": 18.84}
+{"timestamp": "2026-11-15T22:29:02-08:00", "status": "ok", "query": "vintage graphic tee under $30", "output": "Manifesting main character energy in this Y2K butterfly baby tee, and I’m literally obsessed. 🦋 Grabbed this thrifted gem for just $18 and it gives the ultimate mix of vintage streetwear and soft cottagecore vibes. Throw it on with baggy denim or khaki trousers for the easiest fit ever. Now live on my Depop—go run! ✨", "seconds": 5.29}
+{"timestamp": "2026-11-15T22:29:07-08:00", "status": "ok", "query": "vintage graphic tee under $30", "output": "Manifesting main character energy in this Y2K butterfly baby tee, and I’m literally obsessed. 🦋 Grabbed this thrifted gem for just $18 and it gives the ultimate mix of vintage streetwear and soft cottagecore vibes. Throw it on with baggy denim or khaki trousers for the easiest fit ever. Now live on my Depop—go run! ✨", "seconds": 4.76}
+{"timestamp": "2026-11-15T22:29:07-08:00", "status": "rejected", "query": "", "error": "no query in the request body", "seconds": 0.0}
+{"timestamp": "2026-11-15T22:29:07-08:00", "status": "rejected", "query": "", "error": "no query in the request body", "seconds": 0.0}
+{"timestamp": "2026-11-15T22:29:08-08:00", "status": "rejected", "query": "", "error": "no query in the request body", "seconds": 0.0}
+```
+
+**What It Costs**
+
+I used **agent execution time in seconds** as the measured per-run cost.
+
+I ran 10 warm hosted FitFindr requests and recorded the `seconds` field from the structured logs:
+
+`4.72, 4.61, 4.98, 4.83, 4.97, 4.75, 4.91, 4.62, 4.62, 4.70`
+
+Total:
+
+`47.71 seconds`
+
+Average:
+
+`47.71 / 10 = 4.771 seconds per run`
+
+At 100 runs per day:
+
+`4.771 × 100 = 477.1 seconds`
+
+That is approximately:
+
+`477.1 / 60 = 7.95 minutes of agent execution time per day`
+
+This measurement excludes Render cold-start delay and measures the execution time recorded by FitFindr after the service is awake.
+
+**Run Log and Verdicts**
+
+Before the improvement:
+
+| Criterion | Trial 1 | Trial 2 | Trial 3 | Verdict |
+| --- | --- | --- | --- | --- |
+| Hosted service availability | PASS | PASS | PASS | MET — 3/3 |
+| Existing FitFindr functionality after deployment | PASS | PASS | PASS | MET — 3/3 |
+| Structured logging captures completed requests | PASS | PASS | PASS | MET — 3/3 |
+| Invalid input is rejected cleanly | PASS | PASS | PASS | MET — 3/3 |
+| Warm hosted requests complete within 30 seconds | 21.66s | 4.47s | 4.92s | MET — 3/3 |
+
+Sample evidence from `serve.py`:
+
+`GET /health` through `health()`:
+
+```json
+{"status":"ok"}
+```
+
+A successful hosted `/ask` trial through `ask()`:
+
+```text
+error: no
+selected_item: yes
+outfit_suggestion: yes
+fit_card: yes
+```
+
+Structured output produced through `log_run()`:
+
+```json
+{"timestamp": "2026-11-15T21:20:45-08:00", "query": "vintage graphic tee under $30", "output": "Found the ultimate Y2K butterfly baby tee and I am obsessed! 🦋 Styled it today with baggy dark denim and combat boots for that perfect sweet-meets-grunge vibe. Grab this absolute steal for just $18 over on my Depop before I change my mind and keep it! ✨", "seconds": 4.47}
+```
+
+Invalid input through `ask()`:
+
+```json
+{"error":"Send JSON with a 'query' field, e.g. {\"query\": \"vintage graphic tee under $30\"}"}
+```
+
+HTTP status:
+
+```text
+400
+```
+
+All five criteria were met. No criterion was missed.
+
+**The Improvement**
+
+Although all five criteria passed, successful structured logs did not contain an explicit outcome field while rejected and crashed requests did.
+
+Before, a successful record looked like:
+
+```json
+{"timestamp": "...", "query": "...", "output": "...", "seconds": 4.92}
+```
+
+I changed the successful logging call in `serve.py` to include:
+
+```python
+status="ok"
+```
+
+After the change, a successful record looks like:
+
+```json
+{"timestamp": "2026-11-15T22:29:07-08:00", "status": "ok", "query": "vintage graphic tee under $30", "output": "Manifesting main character energy in this Y2K butterfly baby tee, and I’m literally obsessed. 🦋 Grabbed this thrifted gem for just $18 and it gives the ultimate mix of vintage streetwear and soft cottagecore vibes. Throw it on with baggy denim or khaki trousers for the easiest fit ever. Now live on my Depop—go run! ✨", "seconds": 4.76}
+```
+
+After-improvement results:
+
+| Criterion | Trial 1 | Trial 2 | Trial 3 | Verdict |
+| --- | --- | --- | --- | --- |
+| Hosted service availability | PASS | PASS | PASS | MET — 3/3 |
+| Existing FitFindr functionality after deployment | PASS | PASS | PASS | MET — 3/3 |
+| Structured logging captures completed requests | PASS | PASS | PASS | MET — 3/3 |
+| Invalid input is rejected cleanly | PASS | PASS | PASS | MET — 3/3 |
+| Warm hosted requests complete within 30 seconds | 18.84s | 5.29s | 4.76s | MET — 3/3 |
+
+The improvement helped by making all request outcomes explicit and consistent without breaking any of the existing behavior.
+
+**What's Still Broken**
+
+All five acceptance criteria were met, so there is no remaining failed criterion.
+
+If I tightened one criterion, I would tighten **Criterion 3**. Instead of only requiring a timestamp, input, output or error, and duration, I would require every structured log entry to also contain an explicit status of `ok`, `rejected`, or `crashed` in 3 out of 3 trials.
+
+One remaining operational limitation is that the hosted logs depend on Render's runtime logging and the service's filesystem is not intended to be permanent storage.
+
+If I continued this system, the first thing I would add would be persistent external log storage. That would make the instrumentation survive service restarts and make historical runs easier to query and compare.
+
+**How I Used AI**
+
+I used AI to help turn the Unit 9 deployment and instrumentation work into measurable acceptance criteria. I reviewed the suggested criteria against the actual FitFindr endpoints and logging fields and kept the targets tied to `/health`, `/ask`, structured logs, invalid input handling, and measured warm execution time.
+
+I also used AI while reviewing the evaluation evidence. It helped identify that successful log records did not have an explicit `status` field even though rejected and crashed records did. I used that observation to make the single measured improvement of adding `status="ok"` and then reran the full acceptance test.
