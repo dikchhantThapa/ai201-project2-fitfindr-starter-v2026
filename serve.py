@@ -39,7 +39,7 @@ import threading
 import json
 import time
 from datetime import datetime, timezone
-
+from zoneinfo import ZoneInfo
 
 # config first, and before anything that talks to the model: it loads your .env
 # and fixes the Windows console encoding for every module that imports it.
@@ -55,7 +55,7 @@ LOG_FILE = config.ROOT / "logs" / "runs.jsonl"
 
 def log_run(**fields):
     entry = {
-        "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "timestamp": datetime.now(ZoneInfo("America/Los_Angeles")).isoformat(timespec="seconds"),
         **fields,
     }
     line = json.dumps(entry, ensure_ascii=False)
