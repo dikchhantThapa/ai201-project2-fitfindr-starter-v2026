@@ -63,6 +63,8 @@ def log_run(**fields):
 
     with LOG_FILE.open("a", encoding="utf-8") as f:
         f.write(line + "\n")
+    
+    print(line, flush=True)
 
 # ── one request at a time ─────────────────────────────────────────────────────
 # Here's why this exists.
