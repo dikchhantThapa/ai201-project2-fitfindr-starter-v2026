@@ -62,10 +62,7 @@ python app.py ask 'vintage graphic tee under $30'
 > and substitutes nothing. You get results with no price ceiling and no error
 > saying so. Single quotes are literal in PowerShell, bash and zsh alike.
 
-That last one runs the loop. All three tools are stubs, so it will tell you the
-loop isn't built yet. **That's the correct starting position** — it runs, and it
-does nothing.
-
+That last command runs the completed FitFindr agent loop.
 ---
 
 ## Every command
@@ -162,9 +159,13 @@ curl -sS -X POST https://dikchhant-fitfindr.onrender.com/ask \
 **Windows PowerShell**
 
 ```powershell
-curl.exe -sS -X POST https://dikchhant-fitfindr.onrender.com/ask `
-  -H "Content-Type: application/json" `
-  -d '{"query":"vintage graphic tee under $30"}'
+$body = @{ query = 'vintage graphic tee under $30' } | ConvertTo-Json -Compress
+
+Invoke-RestMethod `
+  -Uri "https://dikchhant-fitfindr.onrender.com/ask" `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body $body
 ```
 
 The response contains the full FitFindr session, so it is long. For a successful run, check that:
@@ -193,10 +194,18 @@ curl -sS -X POST https://dikchhant-fitfindr.onrender.com/ask \
 **Windows PowerShell**
 
 ```powershell
-curl.exe -sS -X POST https://dikchhant-fitfindr.onrender.com/ask `
-  -H "Content-Type: application/json" `
-  -d '{"query":"vintage graphic tee under $30"}' `
-  | python -c "import sys,json; d=json.load(sys.stdin); print('error:', 'yes' if d.get('error') else 'no'); print('selected_item:', 'yes' if d.get('selected_item') else 'no'); print('outfit_suggestion:', 'yes' if d.get('outfit_suggestion') else 'no'); print('fit_card:', 'yes' if d.get('fit_card') else 'no')"
+$body = @{ query = 'vintage graphic tee under $30' } | ConvertTo-Json -Compress
+
+$d = Invoke-RestMethod `
+  -Uri "https://dikchhant-fitfindr.onrender.com/ask" `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body $body
+
+if ($d.error) { "error: yes" } else { "error: no" }
+if ($d.selected_item) { "selected_item: yes" } else { "selected_item: no" }
+if ($d.outfit_suggestion) { "outfit_suggestion: yes" } else { "outfit_suggestion: no" }
+if ($d.fit_card) { "fit_card: yes" } else { "fit_card: no" }
 ```
 
 Expected successful result:
@@ -264,8 +273,8 @@ FitFindr handles one agent request at a time. Structured logs record the timesta
 | File | What it does |
 |---|---|
 | `config.py` | Every setting worth changing — **TEMPERATURE and the cache are at the top** |
-| `tools.py` | Your three tools. **Stubs — you build these** |
-| `agent.py` | The planning loop and the session. **Stub — you build this** |
+| `tools.py` | The three FitFindr tools: listing search, outfit suggestion, and fit-card generation |
+| `agent.py` | The completed planning loop and session state |
 | `generate.py` | The only thing that calls out to a service. Handles pacing and quota |
 | `trace.py` | The trace helper, and the loop's stop condition |
 | `app.py` | The command line |
