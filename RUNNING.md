@@ -126,7 +126,7 @@ The hosted version is the easiest way to test the project. No local setup or API
 
 ### Check that the service is running
 
-**Bash / Git Bash**
+**macOS / Linux / Git Bash**
 
 ```bash
 curl -sS https://dikchhant-fitfindr.onrender.com/health
@@ -148,7 +148,7 @@ The free Render service may take longer on the first request after it has been i
 
 ### Send a FitFindr request
 
-**Bash / Git Bash**
+**macOS / Linux / Git Bash**
 
 ```bash
 curl -sS -X POST https://dikchhant-fitfindr.onrender.com/ask \
@@ -182,7 +182,7 @@ You can replace the example query with another clothing request.
 
 Instead of reading the full JSON response, this command gives a simple yes/no check for the main FitFindr outputs.
 
-**Bash / Git Bash**
+**macOS / Linux / Git Bash**
 
 ```bash
 curl -sS -X POST https://dikchhant-fitfindr.onrender.com/ask \
@@ -220,7 +220,7 @@ fit_card: yes
 
 ### Try unexpected input
 
-**Bash / Git Bash**
+**macOS / Linux / Git Bash**
 
 ```bash
 curl -sS -X POST https://dikchhant-fitfindr.onrender.com/ask \
